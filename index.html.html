@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Predictive Electoral Analytics — CYBERJOAR AI OC.41335.2026.59218</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#08090c;--bg2:#0e1016;--bg3:#14161f;--bg4:#1c1f2e;
+  --border:#232638;--border2:#2e3350;
+  --a:#ff3b3b;--b:#3b8eff;--c:#f0b429;
+  --text:#e8eaf2;--muted:#6b6f85;--dim:#3a3d52;
+  --green:#22c55e;--purple:#a78bfa;
+  --font-head:'Bebas Neue',sans-serif;
+  --font-body:'IBM Plex Sans',sans-serif;
+  --font-mono:'IBM Plex Mono',monospace;
+}
+html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--font-body)}
+
+/* SCAN LINE EFFECT */
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.08) 2px,rgba(0,0,0,.08) 4px);pointer-events:none;z-index:9999}
+
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border2);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:100}
+.topbar-title{font-family:var(--font-head);font-size:22px;letter-spacing:3px;color:var(--text)}
+.topbar-title span{color:var(--a)}
+.topbar-meta{display:flex;gap:12px;flex-wrap:wrap}
+.meta-chip{font-family:var(--font-mono);font-size:10px;padding:4px 10px;border-radius:3px;border:1px solid var(--border2);color:var(--muted)}
+.meta-chip.live{border-color:var(--green);color:var(--green);display:flex;align-items:center;gap:5px}
+.pulse-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1.4s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.container{max-width:1400px;margin:0 auto;padding:24px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-family:var(--font-head);font-size:15px;letter-spacing:2px;color:var(--muted)}
+.card-body{padding:18px}
+
+/* CANDIDATE CARDS */
+.cand-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;position:relative}
+.cand-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.cand-card.ca::before{background:var(--a)}
+.cand-card.cb::before{background:var(--b)}
+.cand-card.cc::before{background:var(--c)}
+.cand-top{padding:16px 18px;border-bottom:1px solid var(--border)}
+.cand-label{font-family:var(--font-mono);font-size:9px;letter-spacing:2px;color:var(--muted);margin-bottom:4px}
+.cand-name{font-family:var(--font-head);font-size:26px;letter-spacing:2px}
+.ca .cand-name{color:var(--a)} .cb .cand-name{color:var(--b)} .cc .cand-name{color:var(--c)}
+.cand-role{font-size:11px;color:var(--muted);margin-top:2px;font-family:var(--font-mono)}
+.pow-block{padding:16px 18px;border-bottom:1px solid var(--border);text-align:center}
+.pow-label{font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:8px}
+.pow-arc{position:relative;width:120px;height:70px;margin:0 auto}
+.pow-arc svg{width:100%;height:100%}
+.pow-num{position:absolute;bottom:0;left:50%;transform:translateX(-50%);font-family:var(--font-head);font-size:32px;line-height:1}
+.ca .pow-num{color:var(--a)} .cb .pow-num{color:var(--b)} .cc .pow-num{color:var(--c)}
+.pow-pct{font-size:13px;color:var(--muted)}
+.metrics-grid{padding:14px 18px;display:flex;flex-direction:column;gap:8px}
+.metric-row{display:flex;flex-direction:column;gap:4px}
+.metric-top{display:flex;justify-content:space-between;align-items:center}
+.metric-name{font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.metric-val{font-family:var(--font-mono);font-size:11px;font-weight:700}
+.bar-track{height:5px;background:var(--bg4);border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px;transition:width 1s cubic-bezier(.4,0,.2,1)}
+.ca .bar-fill{background:linear-gradient(90deg,#ff3b3b88,var(--a))}
+.cb .bar-fill{background:linear-gradient(90deg,#3b8eff88,var(--b))}
+.cc .bar-fill{background:linear-gradient(90deg,#f0b42988,var(--c))}
+
+/* MATRIX TABLE */
+.matrix-wrap{overflow-x:auto}
+.matrix-table{width:100%;border-collapse:collapse;font-size:12px}
+.matrix-table th{font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:10px 14px;border-bottom:2px solid var(--border2);text-align:left;white-space:nowrap;background:var(--bg3)}
+.matrix-table td{padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px;font-family:var(--font-body);vertical-align:middle}
+.matrix-table tr:last-child td{border-bottom:none}
+.matrix-table tr:hover td{background:rgba(255,255,255,.02)}
+.factor-name{font-weight:600;color:var(--text);font-size:12px}
+.factor-weight{font-family:var(--font-mono);font-size:10px;color:var(--muted)}
+.score-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-family:var(--font-mono);font-size:11px;font-weight:700}
+.score-pill.high{background:rgba(34,197,94,.12);color:#22c55e;border:1px solid rgba(34,197,94,.25)}
+.score-pill.mid{background:rgba(240,180,41,.12);color:var(--c);border:1px solid rgba(240,180,41,.25)}
+.score-pill.low{background:rgba(255,59,59,.12);color:var(--a);border:1px solid rgba(255,59,59,.25)}
+.score-pill.nil{background:rgba(107,111,133,.1);color:var(--muted);border:1px solid var(--border)}
+.winner-badge{background:linear-gradient(135deg,rgba(34,197,94,.2),rgba(34,197,94,.05));color:#22c55e;border:1px solid rgba(34,197,94,.3);padding:2px 8px;border-radius:3px;font-family:var(--font-mono);font-size:9px;font-weight:700;letter-spacing:1px}
+
+/* SENTIMENT */
+.sentiment-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.sent-card{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:12px;text-align:center}
+.sent-name{font-family:var(--font-mono);font-size:9px;color:var(--muted);margin-bottom:8px;letter-spacing:1px}
+.sent-bar-wrap{height:80px;display:flex;align-items:flex-end;justify-content:center;gap:4px;margin-bottom:6px}
+.sent-bar{width:24px;border-radius:3px 3px 0 0;transition:height 1s ease}
+.sent-positive{background:linear-gradient(180deg,#22c55e,#16a34a)}
+.sent-neutral{background:linear-gradient(180deg,var(--muted),#4a4d62)}
+.sent-negative{background:linear-gradient(180deg,var(--a),#991b1b)}
+.sent-labels{display:flex;justify-content:center;gap:4px;flex-wrap:wrap}
+.sent-lbl{font-family:var(--font-mono);font-size:8px;color:var(--muted)}
+
+/* WEIGHTS PANEL */
+.weights-grid{display:flex;flex-direction:column;gap:10px}
+.weight-row{display:flex;align-items:center;gap:10px}
+.weight-name{font-family:var(--font-mono);font-size:10px;color:var(--muted);width:130px;flex-shrink:0}
+.weight-slider{flex:1;-webkit-appearance:none;height:4px;border-radius:2px;background:var(--bg4);outline:none;cursor:pointer}
+.weight-slider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--purple);cursor:pointer;border:2px solid var(--bg2)}
+.weight-num{font-family:var(--font-mono);font-size:11px;color:var(--purple);width:32px;text-align:right}
+
+/* SCENARIO */
+.scenario-btns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.sc-btn{font-family:var(--font-mono);font-size:10px;padding:7px 14px;border-radius:4px;border:1px solid var(--border2);background:var(--bg3);color:var(--muted);cursor:pointer;transition:all .2s;letter-spacing:1px}
+.sc-btn.active,.sc-btn:hover{border-color:var(--purple);color:var(--purple);background:rgba(167,139,250,.08)}
+.scenario-result{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:14px}
+.sc-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.sc-name{font-family:var(--font-mono);font-size:10px;color:var(--muted);width:90px;flex-shrink:0}
+.sc-bar-track{flex:1;height:22px;background:var(--bg4);border-radius:4px;overflow:hidden;position:relative}
+.sc-bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:8px;font-family:var(--font-mono);font-size:10px;font-weight:700;color:rgba(255,255,255,.9);transition:width 1s cubic-bezier(.4,0,.2,1);min-width:40px;white-space:nowrap}
+
+/* INSIGHT BOX */
+.insight-list{display:flex;flex-direction:column;gap:8px}
+.insight-item{background:var(--bg3);border-left:3px solid var(--purple);padding:10px 14px;border-radius:0 6px 6px 0}
+.insight-tag{font-family:var(--font-mono);font-size:8px;color:var(--purple);letter-spacing:2px;margin-bottom:3px;text-transform:uppercase}
+.insight-text{font-size:12px;color:var(--text);line-height:1.5}
+
+/* SECTION DIVIDER */
+.sec-divider{display:flex;align-items:center;gap:12px;margin:24px 0 16px}
+.sec-divider-line{flex:1;height:1px;background:var(--border)}
+.sec-divider-label{font-family:var(--font-head);font-size:13px;letter-spacing:3px;color:var(--muted);white-space:nowrap}
+
+/* ANIMATE IN */
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.fadeup{animation:fadeUp .5s ease both}
+.d1{animation-delay:.05s}.d2{animation-delay:.1s}.d3{animation-delay:.15s}.d4{animation-delay:.2s}.d5{animation-delay:.25s}
+
+@media(max-width:900px){.grid-3{grid-template-columns:1fr}.grid-2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-title"><span>&#9632;</span> ELECTORAL ANALYTICS ENGINE</div>
+  <div class="topbar-meta">
+    <div class="meta-chip">CYBERJOAR AI — OC.41335.2026.59218</div>
+    <div class="meta-chip">PROBLEM STATEMENT 5</div>
+    <div class="meta-chip live"><div class="pulse-dot"></div>OSINT FEED ACTIVE</div>
+    <div class="meta-chip" id="clock-chip">--:--:-- UTC</div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- CANDIDATE CARDS -->
+  <div class="sec-divider fadeup">
+    <div class="sec-divider-line"></div>
+    <div class="sec-divider-label">CANDIDATE PROBABILITY OF WIN</div>
+    <div class="sec-divider-line"></div>
+  </div>
+
+  <div class="grid-3">
+    <!-- CANDIDATE A -->
+    <div class="cand-card ca fadeup d1" id="card-a">
+      <div class="cand-top">
+        <div class="cand-label">CANDIDATE A — INCUMBENT</div>
+        <div class="cand-name">RAJIV SHARMA</div>
+        <div class="cand-role">INC PARTY &bull; 2-TERM INCUMBENT &bull; NORTH CONSTITUENCY</div>
+      </div>
+      <div class="pow-block">
+        <div class="pow-label">PROBABILITY OF WIN</div>
+        <div class="pow-arc">
+          <svg viewBox="0 0 120 70" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10,65 A55,55 0 0,1 110,65" fill="none" stroke="#1c1f2e" stroke-width="10" stroke-linecap="round"/>
+            <path id="arc-a" d="M10,65 A55,55 0 0,1 110,65" fill="none" stroke="#ff3b3b" stroke-width="10" stroke-linecap="round" stroke-dasharray="0 173"/>
+          </svg>
+          <div class="pow-num ca" id="pow-a-num">0<span class="pow-pct">%</span></div>
+        </div>
+      </div>
+      <div class="metrics-grid" id="metrics-a"></div>
+    </div>
+
+    <!-- CANDIDATE B -->
+    <div class="cand-card cb fadeup d2" id="card-b">
+      <div class="cand-top">
+        <div class="cand-label">CANDIDATE B — CHALLENGER</div>
+        <div class="cand-name">PRIYA VERMA</div>
+        <div class="cand-role">BJP PARTY &bull; FIRST-TIME CANDIDATE &bull; NORTH CONSTITUENCY</div>
+      </div>
+      <div class="pow-block">
+        <div class="pow-label">PROBABILITY OF WIN</div>
+        <div class="pow-arc">
+          <svg viewBox="0 0 120 70" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10,65 A55,55 0 0,1 110,65" fill="none" stroke="#1c1f2e" stroke-width="10" stroke-linecap="round"/>
+            <path id="arc-b" d="M10,65 A55,55 0 0,1 110,65" fill="none" stroke="#3b8eff" stroke-width="10" stroke-linecap="round" stroke-dasharray="0 173"/>
+          </svg>
+          <div class="pow-num cb" id="pow-b-num">0<span class="pow-pct">%</span></div>
+        </div>
+      </div>
+      <div class="metrics-grid" id="metrics-b"></div>
+    </div>
+
+    <!-- CANDIDATE C -->
+    <div class="cand-card cc fadeup d3" id="card-c">
+      <div class="cand-top">
+        <div class="cand-label">CANDIDATE C — INDEPENDENT</div>
+        <div class="cand-name">ARJUN PATEL</div>
+        <div class="cand-role">INDEPENDENT &bull; LOCAL LEADER &bull; NORTH CONSTITUENCY</div>
+      </div>
+      <div class="pow-block">
+        <div class="pow-label">PROBABILITY OF WIN</div>
+        <div class="pow-arc">
+          <svg viewBox="0 0 120 70" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10,65 A55,55 0 0,1 110,65" fill="none" stroke="#1c1f2e" stroke-width="10" stroke-linecap="round"/>
+            <path id="arc-c" d="M10,65 A55,55 0 0,1 110,65" fill="none" stroke="#f0b429" stroke-width="10" stroke-linecap="round" stroke-dasharray="0 173"/>
+          </svg>
+          <div class="pow-num cc" id="pow-c-num">0<span class="pow-pct">%</span></div>
+        </div>
+      </div>
+      <div class="metrics-grid" id="metrics-c"></div>
+    </div>
+  </div>
+
+  <!-- MATRIX TABLE -->
+  <div class="sec-divider fadeup d2">
+    <div class="sec-divider-line"></div>
+    <div class="sec-divider-label">MULTI-FACTOR COMPARISON MATRIX</div>
+    <div class="sec-divider-line"></div>
+  </div>
+
+  <div class="card fadeup d3" style="margin-bottom:20px">
+    <div class="card-header">
+      <div class="card-title">HEAD-TO-HEAD FACTOR ANALYSIS</div>
+      <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted)">WEIGHTED OSINT + HISTORICAL DATA</div>
+    </div>
+    <div class="card-body" style="padding:0">
+      <div class="matrix-wrap">
+        <table class="matrix-table" id="matrix-table"></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEIGHTS + SCENARIO -->
+  <div class="grid-2 fadeup d3">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">FACTOR WEIGHT CONTROLS</div>
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--purple)">DRAG TO ADJUST &rarr; LIVE RECALC</div>
+      </div>
+      <div class="card-body">
+        <div class="weights-grid" id="weights-grid"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">TURNOUT SCENARIO SIMULATION</div>
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted)">CLICK SCENARIO TO SIMULATE</div>
+      </div>
+      <div class="card-body">
+        <div class="scenario-btns">
+          <button class="sc-btn active" onclick="setScenario('normal',this)">NORMAL TURNOUT (62%)</button>
+          <button class="sc-btn" onclick="setScenario('high',this)">HIGH TURNOUT (78%)</button>
+          <button class="sc-btn" onclick="setScenario('low',this)">LOW TURNOUT (44%)</button>
+          <button class="sc-btn" onclick="setScenario('swing',this)">SWING VOTERS (+15%)</button>
+        </div>
+        <div class="scenario-result" id="scenario-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OSINT SENTIMENT + INSIGHTS -->
+  <div class="grid-2 fadeup d4">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">OSINT SENTIMENT ANALYSIS</div>
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--green)">&#9679; LIVE — SOCIAL + NEWS + FORUMS</div>
+      </div>
+      <div class="card-body">
+        <div class="sentiment-grid" id="sentiment-grid"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">STRATEGIC INSIGHTS</div>
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted)">AI-GENERATED FROM MATRIX</div>
+      </div>
+      <div class="card-body">
+        <div class="insight-list" id="insight-list"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+// ─── DATA MODEL ────────────────────────────────────────────────────────────────
+const FACTORS = [
+  { key:'incumbency',   name:'Incumbency Effect',      weight:15, scores:[28, 82, 55], labels:['Negative Anti-Incumbent','Strong First-Timer Boost','Neutral / Local Respect'] },
+  { key:'party',        name:'Party Strength',          weight:22, scores:[60, 88, 22], labels:['Moderate National','Dominant Regional Bloc','Weak / Independents Only'] },
+  { key:'pastwork',     name:'Past Work Record',        weight:18, scores:[72, 65, 30], labels:['Verified Dev Projects','High Social Activism','Very Limited Record'] },
+  { key:'personalbase', name:'Personal Voter Base',     weight:16, scores:[65, 78, 80], labels:['Traditional Loyalists','Youth & Urban Appeal','Hyper-Local Community'] },
+  { key:'religious',    name:'Religious / Caste Base',  weight:14, scores:[45, 84, 38], labels:['Split Support (–)','Solidified Bloc','Minority Niche'] },
+  { key:'digital',      name:'Digital Sentiment',       weight:15, scores:[32, 88, 25], labels:['Neutral / Negative','Highly Positive','Low Visibility'] },
+];
+
+const CANDIDATES = [
+  { id:'a', name:'RAJIV SHARMA', color:'#ff3b3b' },
+  { id:'b', name:'PRIYA VERMA',  color:'#3b8eff' },
+  { id:'c', name:'ARJUN PATEL',  color:'#f0b429' },
+];
+
+const SENTIMENT = [
+  { name:'RAJIV SHARMA', pos:22, neu:38, neg:40 },
+  { name:'PRIYA VERMA',  pos:62, neu:28, neg:10 },
+  { name:'ARJUN PATEL',  pos:35, neu:42, neg:23 },
+];
+
+const SCENARIOS = {
+  normal:{ label:'Normal Turnout (62%)', mods:[1.00, 1.00, 1.00] },
+  high:  { label:'High Turnout (78%)',   mods:[0.88, 1.12, 0.95] },
+  low:   { label:'Low Turnout (44%)',    mods:[1.08, 0.82, 1.05] },
+  swing: { label:'Swing Voters (+15%)',  mods:[0.80, 1.22, 0.90] },
+};
+
+let currentScenario = 'normal';
+let weights = FACTORS.map(f=>f.weight);
+
+function getPill(score){
+  if(score>=75) return `<span class="score-pill high">&#9650; ${score}</span>`;
+  if(score>=50) return `<span class="score-pill mid">&#9654; ${score}</span>`;
+  if(score>=30) return `<span class="score-pill low">&#9660; ${score}</span>`;
+  return `<span class="score-pill nil">&#8212; ${score}</span>`;
+}
+
+function calcPoW(scenarioKey='normal'){
+  const mods = SCENARIOS[scenarioKey].mods;
+  const raw = CANDIDATES.map((c,ci)=>{
+    let total=0, wsum=0;
+    FACTORS.forEach((f,fi)=>{ total += f.scores[ci] * weights[fi]; wsum += weights[fi]; });
+    return (total/wsum) * mods[ci];
+  });
+  const sum = raw.reduce((a,b)=>a+b,0);
+  return raw.map(v=>Math.round(v/sum*100));
+}
+
+function calcRawScore(ci){
+  let total=0, wsum=0;
+  FACTORS.forEach((f,fi)=>{ total+=f.scores[ci]*weights[fi]; wsum+=weights[fi]; });
+  return Math.round(total/wsum);
+}
+
+// ─── BUILD METRIC BARS ────────────────────────────────────────────────────────
+function buildMetrics(){
+  CANDIDATES.forEach((c,ci)=>{
+    const el = document.getElementById('metrics-'+c.id);
+    el.innerHTML = FACTORS.slice(0,4).map((f,fi)=>`
+      <div class="metric-row">
+        <div class="metric-top">
+          <span class="metric-name">${f.name}</span>
+          <span class="metric-val" style="color:${c.color}">${f.scores[ci]}</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill ${c.id==='a'?'ca':c.id==='b'?'cb':'cc'}" style="width:${f.scores[ci]}%"></div></div>
+      </div>`).join('');
+  });
+}
+
+// ─── BUILD MATRIX ─────────────────────────────────────────────────────────────
+function buildMatrix(){
+  const t = document.getElementById('matrix-table');
+  t.innerHTML = `<thead><tr>
+    <th>FACTOR</th><th>WEIGHT</th>
+    <th style="color:#ff3b3b">RAJIV SHARMA</th>
+    <th style="color:#3b8eff">PRIYA VERMA</th>
+    <th style="color:#f0b429">ARJUN PATEL</th>
+    <th>LEADER</th>
+  </tr></thead><tbody>${
+    FACTORS.map(f=>{
+      const maxScore = Math.max(...f.scores);
+      const leaderIdx = f.scores.indexOf(maxScore);
+      const leaderColor = CANDIDATES[leaderIdx].color;
+      return `<tr>
+        <td><div class="factor-name">${f.name}</div></td>
+        <td><div class="factor-weight">${f.weight}%</div></td>
+        ${f.scores.map(s=>getPill(s)).map(p=>`<td>${p}</td>`).join('')}
+        <td><span class="winner-badge" style="border-color:${leaderColor}44;color:${leaderColor};background:${leaderColor}15">${CANDIDATES[leaderIdx].name.split(' ')[0].toUpperCase()}</span></td>
+      </tr>`;
+    }).join('')
+  }</tbody>`;
+}
+
+// ─── BUILD WEIGHTS ────────────────────────────────────────────────────────────
+function buildWeights(){
+  const el = document.getElementById('weights-grid');
+  el.innerHTML = FACTORS.map((f,fi)=>`
+    <div class="weight-row">
+      <div class="weight-name">${f.name}</div>
+      <input type="range" class="weight-slider" min="1" max="40" value="${weights[fi]}"
+        oninput="weights[${fi}]=+this.value;document.getElementById('wn-${fi}').textContent=this.value+'%';recalc()">
+      <div class="weight-num" id="wn-${fi}">${weights[fi]}%</div>
+    </div>`).join('');
+}
+
+// ─── BUILD SENTIMENT ──────────────────────────────────────────────────────────
+function buildSentiment(){
+  const el = document.getElementById('sentiment-grid');
+  el.innerHTML = SENTIMENT.map((s,si)=>{
+    const color = [CANDIDATES[0].color, CANDIDATES[1].color, CANDIDATES[2].color][si];
+    return `<div class="sent-card">
+      <div class="sent-name" style="color:${color}">${s.name.split(' ')[0]}</div>
+      <div class="sent-bar-wrap">
+        <div class="sent-bar sent-positive" style="height:${s.pos*.8}px" title="Positive ${s.pos}%"></div>
+        <div class="sent-bar sent-neutral"  style="height:${s.neu*.8}px" title="Neutral ${s.neu}%"></div>
+        <div class="sent-bar sent-negative" style="height:${s.neg*.8}px" title="Negative ${s.neg}%"></div>
+      </div>
+      <div class="sent-labels">
+        <span class="sent-lbl" style="color:#22c55e">+${s.pos}%</span>
+        <span class="sent-lbl">${s.neu}%</span>
+        <span class="sent-lbl" style="color:#ff3b3b">${s.neg}%</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── BUILD INSIGHTS ───────────────────────────────────────────────────────────
+function buildInsights(){
+  const pow = calcPoW(currentScenario);
+  const winnerIdx = pow.indexOf(Math.max(...pow));
+  const winnerName = CANDIDATES[winnerIdx].name;
+  const insights = [
+    { tag:'STRATEGIC GAP', text:`${winnerName} leads in Digital Sentiment (88) and Party Strength (88) — the two highest-weight factors — giving a compounding advantage that rivals cannot close without massive ground campaign shifts.` },
+    { tag:'VULNERABILITY', text:`Rajiv Sharma faces severe anti-incumbency pressure. OSINT sentiment shows 40% negative, the highest among all candidates. Past work score of 72 is insufficient to offset incumbency drag under current weights.` },
+    { tag:'SWING FACTOR', text:`Arjun Patel holds an 80/100 personal base score — the highest of any candidate. In a low-turnout scenario, hyper-local mobilization could split the vote and produce a hung outcome.` },
+    { tag:'KEY BATTLEGROUND', text:`The Religious/Caste Base factor (weight: 14%) shows Priya Verma with a solidified bloc score of 84 vs. Rajiv's 45. This is the single largest swing factor if demographic turnout shifts by ±5%.` },
+  ];
+  document.getElementById('insight-list').innerHTML = insights.map(i=>`
+    <div class="insight-item">
+      <div class="insight-tag">${i.tag}</div>
+      <div class="insight-text">${i.text}</div>
+    </div>`).join('');
+}
+
+// ─── BUILD SCENARIO ───────────────────────────────────────────────────────────
+function buildScenario(key){
+  const pow = calcPoW(key);
+  const colors = ['#ff3b3b','#3b8eff','#f0b429'];
+  const el = document.getElementById('scenario-result');
+  el.innerHTML = `<div style="font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:1.5px;margin-bottom:10px">${SCENARIOS[key].label}</div>` +
+    CANDIDATES.map((c,ci)=>`
+      <div class="sc-row">
+        <div class="sc-name" style="color:${colors[ci]}">${c.name.split(' ')[0].toUpperCase()}</div>
+        <div class="sc-bar-track">
+          <div class="sc-bar-fill" style="background:${colors[ci]}cc;width:${pow[ci]}%">
+            ${pow[ci]}%${pow[ci]===Math.max(...pow)?' &#9733;':''}
+          </div>
+        </div>
+      </div>`).join('');
+}
+
+// ─── UPDATE ARC ───────────────────────────────────────────────────────────────
+function animateArc(id, pct, color){
+  const arc = document.getElementById('arc-'+id);
+  const circumference = 173;
+  const fill = (pct/100) * circumference;
+  arc.setAttribute('stroke-dasharray', `${fill} ${circumference-fill}`);
+  arc.setAttribute('stroke', color);
+}
+
+function animateNum(id, target){
+  const el = document.getElementById('pow-'+id+'-num');
+  let current = 0;
+  const step = Math.ceil(target/40);
+  const timer = setInterval(()=>{
+    current = Math.min(current+step, target);
+    el.innerHTML = current+'<span class="pow-pct">%</span>';
+    if(current>=target) clearInterval(timer);
+  },20);
+}
+
+// ─── RECALC ───────────────────────────────────────────────────────────────────
+function recalc(){
+  const pow = calcPoW(currentScenario);
+  const colors = [CANDIDATES[0].color, CANDIDATES[1].color, CANDIDATES[2].color];
+  pow.forEach((p,i)=>{
+    animateArc(CANDIDATES[i].id, p, colors[i]);
+    document.getElementById('pow-'+CANDIDATES[i].id+'-num').innerHTML = p+'<span class="pow-pct">%</span>';
+  });
+  buildScenario(currentScenario);
+  buildInsights();
+}
+
+function setScenario(key, el){
+  currentScenario = key;
+  document.querySelectorAll('.sc-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  recalc();
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+function init(){
+  buildMetrics();
+  buildMatrix();
+  buildWeights();
+  buildSentiment();
+  buildInsights();
+  buildScenario('normal');
+  // Animate arcs after short delay
+  setTimeout(()=>{
+    const pow = calcPoW('normal');
+    const colors = [CANDIDATES[0].color, CANDIDATES[1].color, CANDIDATES[2].color];
+    pow.forEach((p,i)=>{
+      animateArc(CANDIDATES[i].id, p, colors[i]);
+      animateNum(CANDIDATES[i].id, p);
+    });
+  }, 400);
+}
+
+// ─── CLOCK ────────────────────────────────────────────────────────────────────
+function tick(){
+  document.getElementById('clock-chip').textContent = new Date().toISOString().slice(11,19)+' UTC';
+}
+setInterval(tick,1000);tick();
+
+init();
+</script>
+</body>
+</html>
